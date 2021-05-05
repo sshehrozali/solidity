@@ -4,7 +4,8 @@ Language Features:
 
 
 Compiler Features:
-* JSON-AST: Added selector field for errors and events.
+ * JSON-AST: Added selector field for errors and events.
+ * Yul Optimizer: Remove ``sstore`` and ``mstore`` operations that are never read from.
 
 Bugfixes:
 
