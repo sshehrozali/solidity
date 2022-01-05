@@ -1,3 +1,22 @@
+/*
+	This file is part of solidity.
+
+	solidity is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	solidity is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
+*/
+// SPDX-License-Identifier: GPL-3.0
+#include <libsolutil/Exceptions.h>
+
 #include <libsolidity/lsp/HandlerBase.h>
 #include <libsolidity/lsp/LanguageServer.h>
 #include <libsolidity/lsp/Utils.h>
@@ -5,12 +24,12 @@
 
 #include <liblangutil/Exceptions.h>
 
+#include <fmt/format.h>
+
+using namespace solidity::langutil;
+using namespace solidity::lsp;
+using namespace solidity::util;
 using namespace std;
-
-namespace solidity::lsp
-{
-
-using namespace langutil;
 
 Json::Value HandlerBase::toRange(SourceLocation const& _location) const
 {
@@ -47,6 +66,31 @@ optional<SourceLocation> HandlerBase::parsePosition(string const& _sourceUnitNam
 	return nullopt;
 }
 
+pair<string, LineColumn> HandlerBase::extractSourceUnitNameAndLineColumn(Json::Value const& _args) const
+{
+	string const uri = _args["textDocument"]["uri"].asString();
+	string const sourceUnitName = fileRepository().clientPathToSourceUnitName(uri);
+	if (!fileRepository().sourceUnits().count(sourceUnitName))
+		BOOST_THROW_EXCEPTION(
+			RequestError(ErrorCode::RequestFailed) <<
+			errinfo_comment("Unknown file: " + uri)
+		);
+
+	auto const lineColumn = parseLineColumn(_args["position"]);
+	if (!lineColumn)
+		BOOST_THROW_EXCEPTION(
+			RequestError(ErrorCode::RequestFailed) <<
+			errinfo_comment(fmt::format(
+				"Unknown position {line}:{column} in file: {file}",
+				fmt::arg("line", lineColumn.value().line),
+				fmt::arg("column", lineColumn.value().column),
+				fmt::arg("file", sourceUnitName)
+			))
+		);
+
+	return {sourceUnitName, *lineColumn};
+}
+
 optional<SourceLocation> HandlerBase::parseRange(string const& _sourceUnitName, Json::Value const& _range) const
 {
 	if (!_range.isObject())
@@ -58,6 +102,4 @@ optional<SourceLocation> HandlerBase::parseRange(string const& _sourceUnitName, 
 	solAssert(*start->sourceName == *end->sourceName);
 	start->end = end->end;
 	return start;
-}
-
 }

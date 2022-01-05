@@ -1,8 +1,29 @@
+/*
+	This file is part of solidity.
+
+	solidity is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	solidity is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
+*/
+// SPDX-License-Identifier: GPL-3.0
+
 #include <liblangutil/CharStreamProvider.h>
 #include <liblangutil/Exceptions.h>
 #include <libsolidity/ast/AST.h>
 #include <libsolidity/lsp/FileRepository.h>
 #include <libsolidity/lsp/Utils.h>
+
+#include <fmt/format.h>
+#include <fstream>
 
 namespace solidity::lsp
 {
@@ -42,18 +63,23 @@ vector<Declaration const*> allAnnotatedDeclarations(Expression const* _expressio
 
 	if (auto const* identifier = dynamic_cast<Identifier const*>(_expression))
 	{
-		output.push_back(identifier->annotation().referencedDeclaration);
-		output += identifier->annotation().candidateDeclarations;
+		Declaration const* referencedDeclaration = identifier->annotation().referencedDeclaration;
+		if (referencedDeclaration)
+		{
+			lspDebug(fmt::format("referenced declaration: {} {}", typeid(*referencedDeclaration).name(), referencedDeclaration->name()));
+			output.push_back(referencedDeclaration);
+		}
 	}
 	else if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(_expression))
 	{
-		output.push_back(memberAccess->annotation().referencedDeclaration);
+		if (memberAccess->annotation().referencedDeclaration)
+			output.push_back(memberAccess->annotation().referencedDeclaration);
 	}
 
 	return output;
 }
 
-optional<SourceLocation> declarationPosition(Declaration const* _declaration)
+optional<SourceLocation> declarationLocation(Declaration const* _declaration)
 {
 	if (!_declaration)
 		return nullopt;

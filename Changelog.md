@@ -20,7 +20,7 @@ Compiler Features:
  * Commandline Interface: Event and error signatures are also returned when using ``--hashes``.
  * Yul Optimizer: Remove ``mstore`` and ``sstore`` operations if the slot already contains the same value.
  * Yul: Emit immutable references for pure yul code when requested.
-
+ * LSP: Implements goto-definition.
 
 
 Bugfixes:

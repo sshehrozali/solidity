@@ -35,6 +35,6 @@ VariableDeclaration const* rootConstVariableDeclaration(VariableDeclaration cons
 /// Returns true if the constant variable declaration is recursive.
 bool isConstantVariableRecursive(VariableDeclaration const& _varDecl);
 
-/// Teturns the innermost AST node that covers the given location or nullptr if not found.
+/// Returns the innermost AST node that covers the given location or nullptr if not found.
 ASTNode const* locateInnermostASTNode(int _pos, SourceUnit const& _sourceUnit);
 }
