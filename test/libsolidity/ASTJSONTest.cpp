@@ -50,14 +50,29 @@ namespace
 
 string const sourceDelimiter("==== Source: ");
 
-const map<string, CompilerStack::State> compilerStateMap = {
-	{"Empty", CompilerStack::State::Empty},
-	{"SourcesSet", CompilerStack::State::SourcesSet},
-	{"Parsed", CompilerStack::State::Parsed},
-	{"ParsedAndImported", CompilerStack::State::ParsedAndImported},
-	{"AnalysisPerformed", CompilerStack::State::AnalysisPerformed},
-	{"CompilationSuccessful", CompilerStack::State::CompilationSuccessful}
-};
+string compilerStateToString(CompilerStack::State state)
+{
+	switch(state)
+	{
+		case CompilerStack::State::Empty: return "Empty";
+		case CompilerStack::State::SourcesSet: return "SourcesSet";
+		case CompilerStack::State::Parsed: return "Parsed";
+		case CompilerStack::State::ParsedAndImported: return "ParsedAndImported";
+		case CompilerStack::State::AnalysisPerformed: return "AnalysisPerformed";
+		case CompilerStack::State::CompilationSuccessful: return "CompilationSuccessful";
+	}
+	soltestAssert(false, "Unexpected value of state parameter");
+}
+
+CompilerStack::State stringToCompilerState(const string& state)
+{
+	for (unsigned int i = CompilerStack::State::Empty; i <= CompilerStack::State::CompilationSuccessful; ++i)
+	{
+		if (state == compilerStateToString(CompilerStack::State(i)))
+			return CompilerStack::State(i);
+	}
+	BOOST_THROW_EXCEPTION(runtime_error("Unsupported compiler state (" + state + ") in test contract file"));
+}
 
 void replaceVersionWithTag(string& _input)
 {
@@ -105,6 +120,9 @@ ASTJSONTest::ASTJSONTest(string const& _filename)
 		}
 	}
 
+	if (m_variants.empty())
+		BOOST_THROW_EXCEPTION(runtime_error("Missing file with expected result for: \"" + _filename + "\"."));
+
 	ifstream file(_filename);
 	if (!file)
 		BOOST_THROW_EXCEPTION(runtime_error("Cannot open test contract: \"" + _filename + "\"."));
@@ -132,11 +150,9 @@ ASTJSONTest::ASTJSONTest(string const& _filename)
 		{
 			string state = line.substr(failMarker.size());
 			boost::algorithm::trim(state);
-			if (compilerStateMap.find(state) == compilerStateMap.end())
-				BOOST_THROW_EXCEPTION(runtime_error("Unsupported compiler state (" + state + ") in test contract file"));
 			if (m_expectedFailAfter.has_value())
 				BOOST_THROW_EXCEPTION(runtime_error("Duplicated \"failAfter\" directive"));
-			m_expectedFailAfter = compilerStateMap.at(state);
+			m_expectedFailAfter = stringToCompilerState(state);
 		}
 		else if (!line.empty() && !boost::algorithm::starts_with(line, delimiter))
 			source += line + "\n";
