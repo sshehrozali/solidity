@@ -89,9 +89,31 @@ LanguageServer::LanguageServer(Transport& _transport):
 {
 }
 
-optional<SourceLocation> LanguageServer::parseRange(string const& _sourceUnitName, Json::Value const& _range)
+optional<SourceLocation> LanguageServer::parseRange(string const& _sourceUnitName, Json::Value const& _range) const
 {
-	return HandlerBase{*this}.parseRange(_sourceUnitName, _range);
+	if (!_range.isObject())
+		return nullopt;
+	optional<SourceLocation> start = parsePosition(_sourceUnitName, _range["start"]);
+	optional<SourceLocation> end = parsePosition(_sourceUnitName, _range["end"]);
+	if (!start || !end)
+		return nullopt;
+	solAssert(*start->sourceName == *end->sourceName);
+	start->end = end->end;
+	return start;
+}
+
+optional<SourceLocation> LanguageServer::parsePosition(string const& _sourceUnitName, Json::Value const& _position) const
+{
+	if (!m_fileRepository.sourceUnits().count(_sourceUnitName))
+		return nullopt;
+
+	if (optional<LineColumn> lineColumn = parseLineColumn(_position))
+		if (optional<int> const offset = CharStream::translateLineColumnToPosition(
+			m_fileRepository.sourceUnits().at(_sourceUnitName),
+			*lineColumn
+		))
+			return SourceLocation{*offset, *offset, make_shared<string>(_sourceUnitName)};
+	return nullopt;
 }
 
 Json::Value LanguageServer::toRange(SourceLocation const& _location)
@@ -352,7 +374,7 @@ void LanguageServer::handleTextDocumentDidClose(Json::Value const& _args)
 	compileAndUpdateDiagnostics();
 }
 
-ASTNode const* LanguageServer::requestASTNode(std::string const& _sourceUnitName, LineColumn const& _filePos)
+ASTNode const* LanguageServer::astNodeAtSourceLocation(std::string const& _sourceUnitName, LineColumn const& _filePos)
 {
 	if (m_compilerStack.state() < CompilerStack::AnalysisPerformed)
 		return nullptr;
@@ -360,9 +382,10 @@ ASTNode const* LanguageServer::requestASTNode(std::string const& _sourceUnitName
 	if (!m_fileRepository.sourceUnits().count(_sourceUnitName))
 		return nullptr;
 
-	optional<int> sourcePos = m_compilerStack.charStream(_sourceUnitName)
-		.translateLineColumnToPosition(_filePos);
-	if (!sourcePos.has_value())
+	optional<int> sourcePos =
+		m_compilerStack.charStream(_sourceUnitName).translateLineColumnToPosition(_filePos);
+
+	if (!sourcePos)
 		return nullptr;
 
 	return locateInnermostASTNode(*sourcePos, m_compilerStack.ast(_sourceUnitName));

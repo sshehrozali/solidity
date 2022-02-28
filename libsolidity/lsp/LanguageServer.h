@@ -59,7 +59,7 @@ public:
 
 	FileRepository& fileRepository() noexcept { return m_fileRepository; }
 	Transport& client() noexcept { return m_client; }
-	frontend::ASTNode const* requestASTNode(std::string const& _sourceUnitName, langutil::LineColumn const& _filePos);
+	frontend::ASTNode const* astNodeAtSourceLocation(std::string const& _sourceUnitName, langutil::LineColumn const& _filePos);
 	langutil::CharStreamProvider const& charStreamProvider() const noexcept { return m_compilerStack; }
 
 private:
@@ -85,7 +85,13 @@ private:
 	std::optional<langutil::SourceLocation> parseRange(
 		std::string const& _sourceUnitName,
 		Json::Value const& _range
-	);
+	) const;
+	/// @returns the source location given a source unit name and an LSP Range object,
+	/// or nullopt on failure.
+	std::optional<langutil::SourceLocation> parsePosition(
+		std::string const& _sourceUnitName,
+		Json::Value const& _position
+	) const;
 	Json::Value toRange(langutil::SourceLocation const& _location);
 	Json::Value toJson(langutil::SourceLocation const& _location);
 

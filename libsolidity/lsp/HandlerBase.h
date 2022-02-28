@@ -41,18 +41,6 @@ public:
 	Json::Value toRange(langutil::SourceLocation const& _location) const;
 	Json::Value toJson(langutil::SourceLocation const& _location) const;
 
-	std::optional<langutil::SourceLocation> parsePosition(
-		std::string const& _sourceUnitName,
-		Json::Value const& _position
-	) const;
-
-	/// @returns the source location given a source unit name and an LSP Range object,
-	/// or nullopt on failure.
-	std::optional<langutil::SourceLocation> parseRange(
-		std::string const& _sourceUnitName,
-		Json::Value const& _range
-	) const;
-
 	/// @returns source unit name and the line column position as extracted
 	/// from the JSON-RPC parameters.
 	std::pair<std::string, langutil::LineColumn> extractSourceUnitNameAndLineColumn(Json::Value const& _params) const;
@@ -61,6 +49,7 @@ public:
 	FileRepository const& fileRepository() const noexcept { return m_server.fileRepository(); }
 	Transport& client() const noexcept { return m_server.client(); }
 
+protected:
 	LanguageServer& m_server;
 };
 

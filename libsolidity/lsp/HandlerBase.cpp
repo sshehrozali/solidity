@@ -52,20 +52,6 @@ Json::Value HandlerBase::toJson(SourceLocation const& _location) const
 	return item;
 }
 
-optional<SourceLocation> HandlerBase::parsePosition(string const& _sourceUnitName, Json::Value const& _position) const
-{
-	if (!fileRepository().sourceUnits().count(_sourceUnitName))
-		return nullopt;
-
-	if (optional<LineColumn> lineColumn = parseLineColumn(_position))
-		if (optional<int> const offset = CharStream::translateLineColumnToPosition(
-			fileRepository().sourceUnits().at(_sourceUnitName),
-			*lineColumn
-		))
-			return SourceLocation{*offset, *offset, make_shared<string>(_sourceUnitName)};
-	return nullopt;
-}
-
 pair<string, LineColumn> HandlerBase::extractSourceUnitNameAndLineColumn(Json::Value const& _args) const
 {
 	string const uri = _args["textDocument"]["uri"].asString();
@@ -89,17 +75,4 @@ pair<string, LineColumn> HandlerBase::extractSourceUnitNameAndLineColumn(Json::V
 		);
 
 	return {sourceUnitName, *lineColumn};
-}
-
-optional<SourceLocation> HandlerBase::parseRange(string const& _sourceUnitName, Json::Value const& _range) const
-{
-	if (!_range.isObject())
-		return nullopt;
-	optional<SourceLocation> start = parsePosition(_sourceUnitName, _range["start"]);
-	optional<SourceLocation> end = parsePosition(_sourceUnitName, _range["end"]);
-	if (!start || !end)
-		return nullopt;
-	solAssert(*start->sourceName == *end->sourceName);
-	start->end = end->end;
-	return start;
 }

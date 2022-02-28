@@ -25,41 +25,26 @@
 namespace solidity::frontend
 {
 
-namespace
+ASTNode const* locateInnermostASTNode(int _offsetInFile, SourceUnit const& _sourceUnit)
 {
+	ASTNode const* innermostMatch = nullptr;
+	auto locator = SimpleASTVisitor(
+		[&](ASTNode const& _node) -> bool
+		{
+			// In the AST parent location always covers the whole child location.
+			// The parent is visited first so to get the innermost node we simply
+			// take the last one that still contains the offset.
 
-class ASTNodeLocator: public ASTConstVisitor
-{
-public:
-	explicit ASTNodeLocator(int _sourceOffset): m_offsetInFile{_sourceOffset}, m_innermostMatch{nullptr} {}
+			if (!_node.location().containsOffset(_offsetInFile))
+				return false;
 
-	bool visitNode(ASTNode const& _node) override
-	{
-		// In the AST parent location always covers the whole child location.
-		// The parent is visited first so to get the innermost node we simply
-		// take the last one that still contains the offset.
-
-		if (!_node.location().containsOffset(m_offsetInFile))
-			return false;
-
-		m_innermostMatch = &_node;
-		return true;
-	}
-
-	ASTNode const* innermostMatch() const noexcept { return m_innermostMatch; }
-
-private:
-	int const m_offsetInFile;
-	ASTNode const* m_innermostMatch;
-};
-
-}
-
-ASTNode const* locateInnermostASTNode(int _sourceOffset, SourceUnit const& _sourceUnit)
-{
-	ASTNodeLocator locator{_sourceOffset};
+			innermostMatch = &_node;
+			return true;
+		},
+		[](ASTNode const&) {}
+	);
 	_sourceUnit.accept(locator);
-	return locator.innermostMatch();
+	return innermostMatch;
 }
 
 bool isConstantVariableRecursive(VariableDeclaration const& _varDecl)
