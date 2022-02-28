@@ -50,9 +50,9 @@ namespace
 
 string const sourceDelimiter("==== Source: ");
 
-string compilerStateToString(CompilerStack::State state)
+string compilerStateToString(CompilerStack::State _state)
 {
-	switch(state)
+	switch (_state)
 	{
 		case CompilerStack::State::Empty: return "Empty";
 		case CompilerStack::State::SourcesSet: return "SourcesSet";
@@ -64,14 +64,14 @@ string compilerStateToString(CompilerStack::State state)
 	soltestAssert(false, "Unexpected value of state parameter");
 }
 
-CompilerStack::State stringToCompilerState(const string& state)
+CompilerStack::State stringToCompilerState(const string& _state)
 {
 	for (unsigned int i = CompilerStack::State::Empty; i <= CompilerStack::State::CompilationSuccessful; ++i)
 	{
-		if (state == compilerStateToString(CompilerStack::State(i)))
+		if (_state == compilerStateToString(CompilerStack::State(i)))
 			return CompilerStack::State(i);
 	}
-	BOOST_THROW_EXCEPTION(runtime_error("Unsupported compiler state (" + state + ") in test contract file"));
+	BOOST_THROW_EXCEPTION(runtime_error("Unsupported compiler state (" + _state + ") in test contract file"));
 }
 
 void replaceVersionWithTag(string& _input)
@@ -103,13 +103,12 @@ ASTJSONTest::ASTJSONTest(string const& _filename)
 	string_view baseName = _filename;
 	baseName.remove_suffix(4);
 
-	const std::vector<CompilerStack::State> variantCompileStates =
-	{
+	const std::vector<CompilerStack::State> variantCompileStates = {
 		CompilerStack::State::Parsed,
 		CompilerStack::State::AnalysisPerformed
 	};
 
-	for (const auto state : variantCompileStates )
+	for (const auto state: variantCompileStates)
 	{
 		auto variant = TestVariant(baseName, state);
 		if (boost::filesystem::exists(variant.astFilename()))
