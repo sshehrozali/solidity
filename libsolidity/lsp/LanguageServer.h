@@ -80,18 +80,6 @@ private:
 	void compile();
 	using MessageHandler = std::function<void(MessageID, Json::Value const&)>;
 
-	/// @returns the source location given a source unit name and an LSP Range object,
-	/// or nullopt on failure.
-	std::optional<langutil::SourceLocation> parseRange(
-		std::string const& _sourceUnitName,
-		Json::Value const& _range
-	) const;
-	/// @returns the source location given a source unit name and an LSP Range object,
-	/// or nullopt on failure.
-	std::optional<langutil::SourceLocation> parsePosition(
-		std::string const& _sourceUnitName,
-		Json::Value const& _position
-	) const;
 	Json::Value toRange(langutil::SourceLocation const& _location);
 	Json::Value toJson(langutil::SourceLocation const& _location);
 

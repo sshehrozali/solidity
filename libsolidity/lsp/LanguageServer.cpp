@@ -89,33 +89,6 @@ LanguageServer::LanguageServer(Transport& _transport):
 {
 }
 
-optional<SourceLocation> LanguageServer::parseRange(string const& _sourceUnitName, Json::Value const& _range) const
-{
-	if (!_range.isObject())
-		return nullopt;
-	optional<SourceLocation> start = parsePosition(_sourceUnitName, _range["start"]);
-	optional<SourceLocation> end = parsePosition(_sourceUnitName, _range["end"]);
-	if (!start || !end)
-		return nullopt;
-	solAssert(*start->sourceName == *end->sourceName);
-	start->end = end->end;
-	return start;
-}
-
-optional<SourceLocation> LanguageServer::parsePosition(string const& _sourceUnitName, Json::Value const& _position) const
-{
-	if (!m_fileRepository.sourceUnits().count(_sourceUnitName))
-		return nullopt;
-
-	if (optional<LineColumn> lineColumn = parseLineColumn(_position))
-		if (optional<int> const offset = CharStream::translateLineColumnToPosition(
-			m_fileRepository.sourceUnits().at(_sourceUnitName),
-			*lineColumn
-		))
-			return SourceLocation{*offset, *offset, make_shared<string>(_sourceUnitName)};
-	return nullopt;
-}
-
 Json::Value LanguageServer::toRange(SourceLocation const& _location)
 {
 	return HandlerBase(*this).toRange(_location);
@@ -341,7 +314,7 @@ void LanguageServer::handleTextDocumentDidChange(Json::Value const& _args)
 		string text = jsonContentChange["text"].asString();
 		if (jsonContentChange["range"].isObject()) // otherwise full content update
 		{
-			optional<SourceLocation> change = parseRange(sourceUnitName, jsonContentChange["range"]);
+			optional<SourceLocation> change = parseRange(m_fileRepository, sourceUnitName, jsonContentChange["range"]);
 			lspAssert(
 				change && change->hasText(),
 				ErrorCode::RequestFailed,

@@ -48,6 +48,22 @@ std::optional<langutil::LineColumn> parseLineColumn(Json::Value const& _lineColu
 Json::Value toJson(langutil::LineColumn _pos);
 Json::Value toJsonRange(langutil::LineColumn const& _start, langutil::LineColumn const& _end);
 
+/// @returns the source location given a source unit name and an LSP Range object,
+/// or nullopt on failure.
+std::optional<langutil::SourceLocation> parsePosition(
+	FileRepository const& _fileRepository,
+	std::string const& _sourceUnitName,
+	Json::Value const& _position
+);
+
+/// @returns the source location given a source unit name and an LSP Range object,
+/// or nullopt on failure.
+std::optional<langutil::SourceLocation> parseRange(
+	FileRepository const& _fileRepository,
+	std::string const& _sourceUnitName,
+	Json::Value const& _range
+);
+
 /// Extracts all resolved annotations of the given expression AST node.
 ///
 /// This may for example by the type declaration of an identifier,

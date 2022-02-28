@@ -93,4 +93,35 @@ optional<SourceLocation> declarationLocation(Declaration const* _declaration)
 	return nullopt;
 }
 
+optional<SourceLocation> parsePosition(
+	FileRepository const& _fileRepository,
+	string const& _sourceUnitName,
+	Json::Value const& _position
+)
+{
+	if (!_fileRepository.sourceUnits().count(_sourceUnitName))
+		return nullopt;
+
+	if (optional<LineColumn> lineColumn = parseLineColumn(_position))
+		if (optional<int> const offset = CharStream::translateLineColumnToPosition(
+			_fileRepository.sourceUnits().at(_sourceUnitName),
+			*lineColumn
+		))
+			return SourceLocation{*offset, *offset, make_shared<string>(_sourceUnitName)};
+	return nullopt;
+}
+
+optional<SourceLocation> parseRange(FileRepository const& _fileRepository, string const& _sourceUnitName, Json::Value const& _range)
+{
+	if (!_range.isObject())
+		return nullopt;
+	optional<SourceLocation> start = parsePosition(_fileRepository, _sourceUnitName, _range["start"]);
+	optional<SourceLocation> end = parsePosition(_fileRepository, _sourceUnitName, _range["end"]);
+	if (!start || !end)
+		return nullopt;
+	solAssert(*start->sourceName == *end->sourceName);
+	start->end = end->end;
+	return start;
+}
+
 }
