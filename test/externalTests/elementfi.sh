@@ -32,7 +32,20 @@ BINARY_PATH="$2"
 SELECTED_PRESETS="$3"
 
 function compile_fn { npm run build; }
-function test_fn { npm run test; }
+
+function test_fn {
+    # shellcheck disable=SC2046
+    npx --no hardhat test --no-compile --config hardhat.config.test.ts $(
+        # FIXME: Some tests are very flaky. They sometimes fail for a multitude reasons, including:
+        # - https://github.com/element-fi/elf-contracts/issues/243
+        # - https://github.com/element-fi/elf-contracts/issues/240
+        # - "ProviderError: Too Many Requests error received from eth-mainnet.alchemyapi.io"
+        # They are annoying enough that we might end up disabling them all but for now let's try
+        # disabling only the ones that fail in practice
+        find test/ -maxdepth 1 -name "*.ts" \
+            ! -path "test/mockERC20YearnVaultTest.ts" | LC_ALL=C sort
+    )
+}
 
 function elementfi_test
 {
