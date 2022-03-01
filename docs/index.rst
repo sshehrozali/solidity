@@ -95,7 +95,7 @@ Note that they have varying degrees of completeness and up-to-dateness. The Engl
 version stands as a reference.
 
 You can switch between languages by clicking on the flyout menu in the bottom-left corner
-and selecting the preferred lanugage.
+and selecting the preferred language.
 
 * `French <https://docs.soliditylang.org/fr/latest/>`_
 * `Indonesian <https://github.com/solidity-docs/id-indonesian>`_
